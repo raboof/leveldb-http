@@ -5,6 +5,7 @@ This tiny project takes the [multilevel-http](https://www.npmjs.org/package/mult
 * [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers to make the API available for consumption from any webpage, credits to [cors](https://www.npmjs.org/package/cors)
 * [HTTP Digest authentication](https://www.npmjs.org/package/cors) for write operations, thanks to [http-digest-auth](https://www.npmjs.org/package/http-digest-auth)
 * An endpoint to easily get the latest value for any key prefix
+* An endpoint to get an [EventSource](http://www.w3.org/TR/eventsource/#the-eventsource-interface)-stream of inserted values for any key prefix, thanks to [level-live-stream](https://www.npmjs.org/package/level-live-stream)
 
 ## Starting
 
@@ -16,7 +17,7 @@ This tiny project takes the [multilevel-http](https://www.npmjs.org/package/mult
 
 See [multilevel-http](https://github.com/juliangruber/multilevel-http#http-api) for the generic LevelDB API.
 
-This project adds the convenience endpoint:
+This project adds 2 additional endpoints:
 
 ### GET /latest/:prefix
 
@@ -37,6 +38,32 @@ X-Powered-By: Express
     "timestamp": 1407176469778, 
     "value": 24.812
 }
+```
+
+### GET /stream/:prefix
+
+Get an [EventSource](http://www.w3.org/TR/eventsource/#the-eventsource-interface) stream with new values for this prefix.
+
+```
+$ http --stream get http://pi:5000/stream/temperature 
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: Content-Type,WWW-Authenticate
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Type: text/event-stream
+Date: Wed, 06 Aug 2014 18:38:17 GMT
+Transfer-Encoding: chunked
+X-Powered-By: Express
+
+
+id: temperature-1407350298138
+data: {"timestamp":1407350298138,"value":24.062}
+
+id: temperature-1407350304219
+data: {"timestamp":1407350304219,"value":24.000}
+
+^C
 ```
 
 ## History

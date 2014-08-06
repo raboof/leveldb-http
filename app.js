@@ -6,6 +6,7 @@ var digestAuth = require('http-digest-auth')
 var JSONStream = require('JSONStream')
 var levelup = require('level')
 var cors = require('cors')
+var liveStream = require('level-live-stream')
 
 var app = express()
 
@@ -47,6 +48,30 @@ app.get('/latest/:prefix', function (req, res) {
   res.type('json')
   db.readStream(opts)
     .pipe(res)
+})
+
+app.get('/stream/:prefix', function (req, res) {
+  var opts = {}
+  opts.gt = req.params['prefix']
+  opts.lt = req.params['prefix'] + '~'
+  opts.old = false
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive'
+  });
+  res.write('\n')
+
+  var stream = liveStream(db, opts)
+  stream.on('data', function(d) {
+    res.write('id: ' + d.key + '\n')
+    res.write('data: ' + d.value + '\n\n')
+  })
+
+  res.on('close', function() {
+    stream.end()
+  })
 })
 
 // And off we go!
