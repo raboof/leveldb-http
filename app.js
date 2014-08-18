@@ -2,35 +2,39 @@
 
 var multilevel = require('multilevel-http')
 var express = require('express')
-var digestAuth = require('http-digest-auth')
+var auth = require('http-auth')
 var JSONStream = require('JSONStream')
 var levelup = require('level')
 var cors = require('cors')
 var liveStream = require('level-live-stream')
+var crypto = require('crypto')
 
 var app = express()
 
 // Authentication 
-var username = process.env.DB_USER
-var password = process.env.DB_PASS
+var authUsername = process.env.DB_USER
+var authPassword = process.env.DB_PASS
+var authRealm = 'Data section'
 
 app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Type', 'WWW-Authenticate']
 }))
 
-var realm = 'Data section'
-var users = {};
-users[username] = digestAuth.passhash(realm, username, password)
+var digest = auth.digest({ 
+    realm: authRealm
+  }, function (username, callback) { // Expecting md5(username:realm:password) in callback.		
+    if (username === authUsername)
+      callback(crypto.createHash('md5').update(username + ':' + authRealm + ':' + authPassword).digest('hex'))
+    else
+      throw "Invalid username"
+  }
+);
 
-var auth = function(req, res, next) {
-   digestAuth.login(req, res, realm, users)
-   next()
-}
-app.options('*', auth)
-app.post('*', auth)
-app.put('*', auth)
-app.delete('*', auth)
+app.options('*', auth.connect(digest))
+app.post('*', auth.connect(digest))
+app.put('*', auth.connect(digest))
+app.delete('*', auth.connect(digest))
 
 // Database access
 var db = levelup('./thermodata.db')

@@ -3,7 +3,7 @@
 This tiny project takes the [multilevel-http](https://www.npmjs.org/package/multilevel-http) HTTP API for [LevelDB](https://code.google.com/p/leveldb/) and adds:
 
 * [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers to make the API available for consumption from any webpage, credits to [cors](https://www.npmjs.org/package/cors)
-* [HTTP Digest authentication](https://www.npmjs.org/package/cors) for write operations, thanks to [http-digest-auth](https://www.npmjs.org/package/http-digest-auth)
+* [HTTP Digest authentication](https://www.npmjs.org/package/cors) for write operations, thanks to [http-auth](https://www.npmjs.org/package/http-auth)
 * An endpoint to easily get the latest value for any key prefix
 * An endpoint to get an [EventSource](http://www.w3.org/TR/eventsource/#the-eventsource-interface)-stream of inserted values for any key prefix, thanks to [level-live-stream](https://www.npmjs.org/package/level-live-stream)
 
