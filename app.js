@@ -29,7 +29,7 @@ var digest = auth.digest({
     else
       throw "Invalid username"
   }
-);
+)
 
 app.options('*', auth.connect(digest))
 app.post('*', auth.connect(digest))
@@ -64,17 +64,30 @@ app.get('/stream/:prefix', function (req, res) {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive'
-  });
+  })
   res.write('\n')
 
-  var stream = liveStream(db, opts)
-  stream.on('data', function(d) {
+  function writeEvent(d) {
     res.write('id: ' + d.key + '\n')
     res.write('data: ' + d.value + '\n\n')
-  })
+  }
 
-  res.on('close', function() {
-    stream.end()
+  db.readStream({ 
+    'gt': req.params['prefix'], 
+    'lt': req.params['prefix'] + '~',
+    'limit': 1,
+    'reverse': true
+  }).on('data', function(d) {
+    // the latest event for this prefix
+    writeEvent(d)
+
+    // any subsequent events
+    opts.gt = d.key
+    var stream = liveStream(db, opts)
+    stream.on('data', writeEvent)
+    res.on('close', function() {
+      stream.end()
+    })
   })
 })
 
