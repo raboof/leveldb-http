@@ -54,41 +54,53 @@ app.get('/latest/:prefix', function (req, res) {
     .pipe(res)
 })
 
+function getOpts (opts) {
+  if (opts.limit) opts.limit = Number(opts.limit)
+  return opts
+}
+
 app.get('/stream/:prefix', function (req, res) {
-  var opts = {}
-  opts.gt = req.params['prefix']
-  opts.lt = req.params['prefix'] + '~'
-  opts.old = false
+  var opts = getOpts(req.query);
+  if (!opts.gt) {
+    opts.gt = req.params['prefix'];
+    opts.limit = 1;
+    opts.reverse = true;
+  }
+  if (!opts.lt)
+    opts.lt = req.params['prefix'] + '~';
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive'
-  })
-  res.write('\n')
+  });
+  res.write('\n');
 
   function writeEvent(d) {
-    res.write('id: ' + d.key + '\n')
-    res.write('data: ' + d.value + '\n\n')
+    res.write('id: ' + d.key + '\n');
+    res.write('data: ' + d.value + '\n\n');
   }
 
-  db.readStream({ 
-    'gt': req.params['prefix'], 
-    'lt': req.params['prefix'] + '~',
-    'limit': 1,
-    'reverse': true
-  }).on('data', function(d) {
-    // the latest event for this prefix
-    writeEvent(d)
-
-    // any subsequent events
-    opts.gt = d.key
-    var stream = liveStream(db, opts)
-    stream.on('data', writeEvent)
-    res.on('close', function() {
-      stream.end()
+  var lastKey = opts.gt
+  db.readStream(opts)
+    .on('data', function(d) {
+      // Past event(s)
+      writeEvent(d);
+      lastKey = d.key;
     })
-  })
+    .on('end', function(d) {
+      // Stream subsequent events
+      var streamOpts = {}
+      streamOpts.gt = lastKey
+      streamOpts.lt = opts.lt
+      streamOpts.old = false
+  
+      var stream = liveStream(db, streamOpts)
+      stream.on('data', writeEvent)
+      res.on('close', function() {
+        stream.end()
+      })
+    })
 })
 
 // And off we go!
