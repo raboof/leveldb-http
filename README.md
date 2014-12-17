@@ -66,6 +66,9 @@ data: {"timestamp":1407350304219,"value":24.000}
 ^C
 ```
 
+By default this shows the latest value and streams indefinitely from there, 
+but the 'gt' and 'lt' parameters can be used to include more or less data.
+
 ## History
 
 This small app was written to serve as a lightweight time-series db for 
